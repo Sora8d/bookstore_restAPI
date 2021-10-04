@@ -1,0 +1,39 @@
+-All API's that you design should have the same error interface. 
+
+-To be able to return nil when you have objects and the like, you return a pointer of the object.
+So fun() err {
+   return nil
+}
+Is incorrect, cuz it cant return nil
+fun() *err {
+   return nil
+}
+Can return nil
+
+-Remember to separate structures to be able to escalate.
+
+-The best place to put the validation functionality is in the place where the
+data you want to validate is born (so in the case of validation of users, in users.go)
+
+-In the domain lies the structure all the microservice is built around, in this case users.
+
+-Persistence layer= a way to SAVE and RETRIEVE items that your application uses;
+In the case of this app, users_dao contains where the database is accessed
+
+
+- So as of Lesson 9, the way we designed the app is bad.
+
+- I have to learn to set Env Variables from launch.json
+
+- Learn the advantages of MySQL Prepared Statements
+
+-In lesson 11 the instructor creates an uniqueIndex for emails (email_Unique) to assure that emails remain unique, i just put inque in email column, so thats something i should mind.
+
+-In lesson 13 i have this piece of code that i dont understand very well:
+inserResult, saveErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
+	if saveErr != nil {
+		sqlErr, err := saveErr.(*mysql.MySQLError)
+
+-The instructor decided to parse mysql errors differently, thx to a func that allows for mysql errors to have their own type (see last point), we have a ParseError function in mysql_utils, meanwhile other errors that come before entering the db are handled with our own error interfaces.
+
+-Returning pointers is something that apart of the ability to return nil's i dont really understand that much
