@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bookstoreapi/users/logger"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,5 +12,7 @@ var router = gin.Default()
 // The http server is going to be only here and in controller
 func StartApplication() {
 	mapUrls()
+
+	logger.Info("starting app...")
 	router.Run("localhost:8080")
 }

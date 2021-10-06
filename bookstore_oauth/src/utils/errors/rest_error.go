@@ -1,3 +1,4 @@
+//Later this will be made into a shared library
 package errors
 
 import (

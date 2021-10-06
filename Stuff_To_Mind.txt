@@ -33,7 +33,57 @@ In the case of this app, users_dao contains where the database is accessed
 inserResult, saveErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
 	if saveErr != nil {
 		sqlErr, err := saveErr.(*mysql.MySQLError)
+These are type assertions, Mariano helped me learn that.
 
 -The instructor decided to parse mysql errors differently, thx to a func that allows for mysql errors to have their own type (see last point), we have a ParseError function in mysql_utils, meanwhile other errors that come before entering the db are handled with our own error interfaces.
 
--Returning pointers is something that apart of the ability to return nil's i dont really understand that much
+-Returning pointers is something that apart of the ability to return nil's i dont really understand that much.
+
+- In MVC controllers just pass to the services, that have all the business logic.
+
+- Every time you call Scan, you have to call a pointer, even if the var was created inside the function.
+
+-So for search we dont want public requests (or something like that.). So we use "GET /internal/users/search?status=active" for example.
+
+-In lesson 16 date_created goes from a string to a datetime with a default of NOW().
+But after he deletes the NOW() because it can be of a different timezone; so date_created now is not null and of type DATETIME.
+Now i have to update the layout of the GetNow() function in utils to match the DATETIME database format.
+
+-In lesson 17 we use md5 to encrpyt passwords, going to have to find another way by myself later.
+
+
+-Punlic and Private request
+
+-What we did wrong across this series is the fac that we have the services package with the users business logic. If we want to have business logic for another domain, it will still be inside services, so services is going to have bussiness logic of multiple domains which is wrong.
+Dont put just functions everywhere.
+
+-In real life examples usually you work with structs implementing interfaces, so you work with interfaces.
+
+-So in utils, everything separated in packages is good, but in the servces, the business logic, its bad to have everything in different packages (cuz youre killing your app?), so thats when you implement your interfaces.
+
+---- Lesson 19. No logging system
+
+-You log the error as soon as you have it (so in the function that originates the error)
+
+-You can see the logger in action in the get parameter, then the guy processed to add logs to every error (excepto the ones the user makes)
+
+--------------- Lesson 21. Domain Driven Development DDD (looks like a pattern like MVC)
+
+- This instructor recommends working always from domain, then to service, and then to the controller (instead of starting developing the other side).
+
+-The dependences of the DDD work from the outside to the inside.
+
+-The data flows through outside to the inside to outisde again (???)
+
+-I should Check out testify/assert.
+
+-In DDD the business logic is in the domain
+
+-In DDD Repositories persist data, they are interfaces for storing and retrieving Agreggate Roots (not single entities).
+Aggregate Roots are the only objects your client code loads from the repository. 
+
+-In DDD the services are inside the domain, alongisde the DTO.
+
+-In DDD you pass the services to the handlers via functions that "activate them". Its still not that clear apart from the position of the elements....
+
+-Starting to implement Cassandra DB, so this db is notSQL, and it has a primary key, Cassandra is not made for filtering (queryingother stuff thats not the primary key).
