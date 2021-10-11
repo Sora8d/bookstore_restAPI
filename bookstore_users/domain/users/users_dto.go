@@ -1,8 +1,9 @@
 package users
 
 import (
-	"bookstoreapi/users/utils/errors"
 	"strings"
+
+	errors "github.com/Sora8d/bookstore_utils-go/rest_errors"
 )
 
 const (
@@ -24,12 +25,14 @@ type Users []User
 func (user *User) Validate() *errors.RestErr {
 	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
 	if user.Email == "" {
-		return errors.NewBadRequestError("invalid email address")
+		resterr := errors.NewBadRequestErr("invalid email address")
+		return &resterr
 	}
 
 	user.Password = strings.TrimSpace(user.Password)
 	if user.Password == "" {
-		return errors.NewBadRequestError("invalid password")
+		resterr := errors.NewBadRequestErr("invalid password")
+		return &resterr
 	}
 	return nil
 }

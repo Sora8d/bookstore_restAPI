@@ -1,10 +1,10 @@
 package app
 
 import (
-	"bookstoreapi/oauth/clients/cassandra"
 	"bookstoreapi/oauth/controller"
-	"bookstoreapi/oauth/domain/access_token"
 	"bookstoreapi/oauth/repository/db"
+	"bookstoreapi/oauth/repository/rest"
+	at_services "bookstoreapi/oauth/services/access_token"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,14 +12,10 @@ import (
 var router = gin.Default()
 
 func StartApplication() {
-	session, dbErr := cassandra.GetSession()
-	if dbErr != nil {
-		panic(dbErr)
-	}
-	session.Close()
-	atService := access_token.NewService(db.NewRepository())
+	atService := at_services.NewService(db.NewRepository(), rest.NewRepository())
 	atHandler := controller.NewHandler(atService)
 
 	router.GET("/oauth/access_token/:access_token_id", atHandler.GetByIdC)
-	router.Run("localhost:8080")
+	router.POST("/oauth/access_token", atHandler.CreateC)
+	router.Run("localhost:8081")
 }

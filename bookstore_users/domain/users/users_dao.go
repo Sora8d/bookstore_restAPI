@@ -4,23 +4,27 @@ import (
 	"bookstoreapi/users/datasources/mysql/users_db"
 	"bookstoreapi/users/logger"
 	"bookstoreapi/users/utils/date"
-	"bookstoreapi/users/utils/errors"
 	"bookstoreapi/users/utils/mysql_utils"
+	"errors"
 	"fmt"
+	"strings"
+
+	resterrs "github.com/Sora8d/bookstore_utils-go/rest_errors"
 )
 
 const (
-	errorNoRows           = "no rows in result set"
-	queryInsertUser       = "INSERT INTO users (first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
-	queryGetUser          = "SELECT id, first_name, last_name, email, status, date_created FROM users WHERE id = ?;"
-	queryUpdateUser       = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
-	queryDeleteUser       = "DELETE FROM users WHERE id=?;"
-	queryFindUserByStatus = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?;"
+	errorNoRows                 = "no rows in result set"
+	queryInsertUser             = "INSERT INTO users (first_name, last_name, email, date_created, status, password) VALUES(?, ?, ?, ?, ?, ?);"
+	queryGetUser                = "SELECT id, first_name, last_name, email, status, date_created FROM users WHERE id = ?;"
+	queryUpdateUser             = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?;"
+	queryDeleteUser             = "DELETE FROM users WHERE id=?;"
+	queryFindUserByStatus       = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=?;"
+	queryFindByEmailAndPassword = "SELECT id, first_name, last_name, email, date_Created, status FROM users WHERE email=? AND password=?;"
 )
 
 var usersDB = users_db.Client
 
-func (user *User) Get() *errors.RestErr {
+func (user *User) Get() *resterrs.RestErr {
 	if err := usersDB.Ping(); err != nil {
 		panic(err)
 	}
@@ -28,7 +32,8 @@ func (user *User) Get() *errors.RestErr {
 	if err != nil {
 		//This logger we should do with everywhere we have an error
 		logger.Error("error when trying to prepare get user statement", err)
-		return errors.NewInternalServerError("database error")
+		resterr := resterrs.NewInternalServerError("error trying to get user", errors.New("database error"))
+		return &resterr
 	}
 	defer stmt.Close()
 
@@ -39,15 +44,41 @@ func (user *User) Get() *errors.RestErr {
 	return nil
 }
 
+func (user *User) FindByEmailAndPassword() *resterrs.RestErr {
+	if err := usersDB.Ping(); err != nil {
+		panic(err)
+	}
+	stmt, err := usersDB.Prepare(queryFindByEmailAndPassword)
+	if err != nil {
+		//This logger we should do with everywhere we have an error
+		logger.Error("error when trying to prepare get user statement", err)
+		resterr := resterrs.NewInternalServerError("Error trying to validate credentials", errors.New("database error"))
+		return &resterr
+	}
+	defer stmt.Close()
+
+	result := stmt.QueryRow(user.Email, user.Password)
+	if err := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.Status, &user.DateCreated); err != nil {
+		if strings.Contains(err.Error(), errorNoRows) {
+			resterr := resterrs.NewBadRequestErr("Incorrect user credentials")
+			return &resterr
+		}
+		resterr := resterrs.NewInternalServerError("Error trying to validate credentials", errors.New("database error"))
+		return &resterr
+	}
+	return nil
+}
+
 /*
 func (user *User) Get(userId int64) (*User, *errors.RestErr) {
 	return nil, nil
 }
 */
-func (user *User) Save() *errors.RestErr {
+func (user *User) Save() *resterrs.RestErr {
 	stmt, err := usersDB.Prepare(queryInsertUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		resterr := resterrs.NewInternalServerError("Error validating user", errors.New("database error"))
+		return &resterr
 	}
 	defer stmt.Close()
 	user.DateCreated = date.GetNowString()
@@ -65,10 +96,11 @@ func (user *User) Save() *errors.RestErr {
 	return nil
 }
 
-func (user *User) Update() *errors.RestErr {
+func (user *User) Update() *resterrs.RestErr {
 	stmt, err := usersDB.Prepare(queryUpdateUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		resterr := resterrs.NewInternalServerError("Error updating user info", errors.New("database error"))
+		return &resterr
 	}
 	defer stmt.Close()
 
@@ -79,10 +111,11 @@ func (user *User) Update() *errors.RestErr {
 	return nil
 }
 
-func (user *User) Delete() *errors.RestErr {
+func (user *User) Delete() *resterrs.RestErr {
 	stmt, err := usersDB.Prepare(queryDeleteUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		resterr := resterrs.NewInternalServerError("Error updating user info", errors.New("database error"))
+		return &resterr
 	}
 	defer stmt.Close()
 
@@ -93,16 +126,18 @@ func (user *User) Delete() *errors.RestErr {
 	return nil
 }
 
-func (user *User) FindByStatus(status string) (Users, *errors.RestErr) {
+func (user *User) FindByStatus(status string) (Users, *resterrs.RestErr) {
 	stmt, err := usersDB.Prepare(queryFindUserByStatus)
 	if err != nil {
-		return nil, errors.NewInternalServerError(err.Error())
+		resterr := resterrs.NewInternalServerError("Error finding user", errors.New("database error"))
+		return nil, &resterr
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query(status)
 	if err != nil {
-		return nil, errors.NewInternalServerError(err.Error())
+		resterr := resterrs.NewInternalServerError("Error finding user", errors.New("database error"))
+		return nil, &resterr
 	}
 	defer rows.Close()
 	results := make(Users, 0)
@@ -114,7 +149,8 @@ func (user *User) FindByStatus(status string) (Users, *errors.RestErr) {
 		results = append(results, current)
 	}
 	if len(results) == 0 {
-		return nil, errors.NewNotFoundError(fmt.Sprintf("No users matching status %s", status))
+		resterr := resterrs.NewNotFoundError(fmt.Sprintf("No users matching status %s", status))
+		return nil, &resterr
 	}
 	return results, nil
 }

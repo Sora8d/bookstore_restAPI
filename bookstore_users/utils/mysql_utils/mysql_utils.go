@@ -1,9 +1,10 @@
 package mysql_utils
 
 import (
-	"bookstoreapi/users/utils/errors"
-	"fmt"
+	"errors"
 	"strings"
+
+	resterrs "github.com/Sora8d/bookstore_utils-go/rest_errors"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -13,20 +14,25 @@ const (
 	errorMailRepeated = "users.email"
 )
 
-func ParseError(err error) *errors.RestErr {
+func ParseError(err error) *resterrs.RestErr {
 	sqlErr, ok := err.(*mysql.MySQLError)
 	if !ok {
 		if strings.Contains(err.Error(), errorNoRows) {
-			return errors.NewNotFoundError("no record matching given id")
+			resterr := resterrs.NewNotFoundError("no record matching given id")
+			return &resterr
 		}
-		return errors.NewInternalServerError(fmt.Sprintf("error parsing database response"))
+		resterr := resterrs.NewInternalServerError("error parsing database response", errors.New("database error"))
+		return &resterr
 	}
 	switch sqlErr.Number {
 	case 1062:
 		if strings.Contains(sqlErr.Message, errorMailRepeated) {
-			return errors.NewBadRequestError("email already registered")
+			resterr := resterrs.NewBadRequestErr("email already registered")
+			return &resterr
 		}
-		return errors.NewBadRequestError("invalid data")
+		resterr := resterrs.NewBadRequestErr("invalid data")
+		return &resterr
 	}
-	return errors.NewInternalServerError("error processing request")
+	resterr := resterrs.NewInternalServerError("error processing request", errors.New("database error"))
+	return &resterr
 }

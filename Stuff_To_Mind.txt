@@ -1,4 +1,4 @@
--All API's that you design should have the same error interface. 
+-All API's that you design should have the same error interface.
 
 -To be able to return nil when you have objects and the like, you return a pointer of the object.
 So fun() err {
@@ -80,10 +80,49 @@ Dont put just functions everywhere.
 -In DDD the business logic is in the domain
 
 -In DDD Repositories persist data, they are interfaces for storing and retrieving Agreggate Roots (not single entities).
-Aggregate Roots are the only objects your client code loads from the repository. 
+Aggregate Roots are the only objects your client code loads from the repository.
 
 -In DDD the services are inside the domain, alongisde the DTO.
 
 -In DDD you pass the services to the handlers via functions that "activate them". Its still not that clear apart from the position of the elements....
 
--Starting to implement Cassandra DB, so this db is notSQL, and it has a primary key, Cassandra is not made for filtering (queryingother stuff thats not the primary key).
+-Starting to implement Cassandra DB, so this db is notSQL, and it has a primary key, Cassandra is not made for filtering (querying other stuff thats not the primary key).
+
+-Use functions when possible instead of passing vars between packages, cuz if var dont have mocking features it will be hard to test.
+
+-The instructor recommends either resty or mercadolibre/golang-restclient for already made rest clients.
+
+-As a rule there should be a test case for every return statement in a rule (being less than 10 returns admissible, kinda, so if you have more than 10, you should consider refactoring).
+
+-Right now test are not working, maybe because i did import the original users.User instead of creating another struct (which makes the module main.go start i think)
+
+-Imported modules dont execute main functions, but they do execute init() of the packages sorrounding your import.
+
+-In lesson 30 we are changing the login request in this way:
+
+//Users API:
+{
+  "email": "email@gmail.com",
+  "password": "password"
+}
+
+//Password API:
+
+{
+  "grant_type": "password",
+  "client_id": "email@gmail.com",
+  "password": "password"
+}
+{
+  "grant_type": "client_credentials",
+  "client_id": "id-123",
+  "client_secret": "secret-123"
+}
+
+
+-- Important, you know that returning types cant return nil, so you return pointers. WITH INTERFACES YOU CAN RETURN NIL.
+You have a lot to change in your app later
+
+--The instructor used context.Background(), Ill have to look up what is that about. (its a standard package)
+
+-Indexes in ES are like an entire sql db (?)

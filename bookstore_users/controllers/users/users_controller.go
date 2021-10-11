@@ -3,21 +3,23 @@ package users
 import (
 	"bookstoreapi/users/domain/users"
 	"bookstoreapi/users/services"
-	"bookstoreapi/users/utils/errors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	resterrs "github.com/Sora8d/bookstore_utils-go/rest_errors"
+
+	"github.com/Sora8d/bookstore_oauth-go/oauth"
 	"github.com/gin-gonic/gin"
 )
 
-func getUserId(Paramid string) (int64, *errors.RestErr) {
+func getUserId(Paramid string) (int64, *resterrs.RestErr) {
 	userId, userErr := strconv.ParseInt(Paramid, 10, 64)
 	if userErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
-		return 0, err
+		err := resterrs.NewBadRequestErr("invalid user id")
+		return 0, &err
 	}
 	return userId, nil
 }
@@ -32,8 +34,8 @@ func Create(c *gin.Context) {
 		return
 	}
 	if err := json.Unmarshal(bytes, &user); err != nil {
-		restErr := errors.NewBadRequestError("invalid json body")
-		c.JSON(restErr.Status, restErr)
+		restErr := resterrs.NewBadRequestErr("invalid json body")
+		c.JSON(restErr.Status(), restErr)
 		return
 	}
 	/*We can also use c.ShouldBindJSON(&user), that replaces everythin from
@@ -41,16 +43,20 @@ func Create(c *gin.Context) {
 
 	result, saveErr := services.UsersService.CreateUser(user)
 	if saveErr != nil {
-		c.JSON(saveErr.Status, saveErr)
+		c.JSON(saveErr.Status(), saveErr)
 		return
 	}
 	c.JSON(http.StatusCreated, result)
 }
 
 func Get(c *gin.Context) {
+	if err := oauth.AuthenticateRequest(c.Request); err != nil {
+		c.JSON(err.Status, err)
+	}
+
 	userId, idErr := getUserId(c.Param("user_id"))
 	if idErr != nil {
-		c.JSON(idErr.Status, idErr)
+		c.JSON(idErr.Status(), idErr)
 		return
 	}
 	/* albeit this works, it breaks the way structures are arranged, so the video creates and uses a function from the service package
@@ -64,7 +70,7 @@ func Get(c *gin.Context) {
 
 	reqUser, reqErr := services.UsersService.GetUser(userId)
 	if reqErr != nil {
-		c.JSON(reqErr.Status, reqErr)
+		c.JSON(reqErr.Status(), reqErr)
 		return
 	}
 
@@ -75,7 +81,12 @@ func Get(c *gin.Context) {
 		return
 	}
 	*/
-	c.JSON(http.StatusOK, reqUser.Marshall((c.GetHeader("X-Public") == "true")))
+
+	if oauth.GetCallerId(c.Request) == reqUser.Id {
+		c.JSON(http.StatusOK, reqUser.Marshall(false))
+	}
+
+	c.JSON(http.StatusOK, reqUser.Marshall(oauth.IsPublic(c.Request)))
 }
 
 func SearchUser(c *gin.Context) {
@@ -91,7 +102,7 @@ func Update(c *gin.Context) {
 
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		restErr := errors.NewBadRequestError("invalid json body")
+		restErr := resterrs.NewBadRequestErr("invalid json body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}
@@ -130,4 +141,19 @@ func Search(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, users.Marshall((c.GetHeader("X-Public") == "true")))
+}
+
+func Login(c *gin.Context) {
+	var request users.LoginRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		restErr := resterrs.NewBadRequestErr("invalid json body")
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+	user, err := services.UsersService.LoginUser(request)
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }

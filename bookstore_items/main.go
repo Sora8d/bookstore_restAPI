@@ -1,8 +1,6 @@
 package main
 
-import (
-	"bookstoreapi/users/app"
-)
+import "bookstoreapi/items/app"
 
 func main() {
 	app.StartApplication()
