@@ -1,5 +1,5 @@
 //Later this will be made into a shared library
-package errors
+package localerrors
 
 import (
 	"errors"
@@ -37,5 +37,15 @@ func NewInternalServerError(message string) *RestErr {
 		Message: message,
 		Status:  http.StatusInternalServerError,
 		Error:   "internal_server_error",
+	}
+}
+
+//This is from the lesson 39/48, wirdly, this is not on the utils
+
+func NewUnauthorizedError(message string) *RestErr {
+	return &RestErr{
+		Message: "unable to retrieve user information from given access_token",
+		Status:  http.StatusUnauthorized,
+		Error:   "unauthorized",
 	}
 }

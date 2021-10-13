@@ -126,3 +126,15 @@ You have a lot to change in your app later
 --The instructor used context.Background(), Ill have to look up what is that about. (its a standard package)
 
 -Indexes in ES are like an entire sql db (?)
+
+-Using pointers as vars in modules is a bad practice
+
+-Use common logger application-wide.
+
+-In ElasticSearch there are lot of type queries, in apis is best to build a new query system
+
+-"Homework" is to create an endpoint to a delete handler in elasticsearch, and another one to modify items.
+
+-So interfaces allow us to mock stuff.
+
+-For dockers all the sourcecode needs to be in a src folder

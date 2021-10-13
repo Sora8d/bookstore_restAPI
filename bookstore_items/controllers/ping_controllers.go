@@ -1,6 +1,8 @@
 package controllers
 
-import "net/http"
+import (
+	"net/http"
+)
 
 var PingController pingControllersInterface = &pingController{}
 

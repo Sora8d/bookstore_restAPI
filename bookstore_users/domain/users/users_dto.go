@@ -22,17 +22,17 @@ type User struct {
 
 type Users []User
 
-func (user *User) Validate() *errors.RestErr {
+func (user *User) Validate() errors.RestErr {
 	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
 	if user.Email == "" {
 		resterr := errors.NewBadRequestErr("invalid email address")
-		return &resterr
+		return resterr
 	}
 
 	user.Password = strings.TrimSpace(user.Password)
 	if user.Password == "" {
 		resterr := errors.NewBadRequestErr("invalid password")
-		return &resterr
+		return resterr
 	}
 	return nil
 }
